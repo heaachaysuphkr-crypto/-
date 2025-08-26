@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบควบคุมไฟอัจฉริยะ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .light-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .light-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .light-card.active::before {
+            transform: scaleX(1);
+        }
+        
+        .light-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .light-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .light-card.active .light-icon {
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+        
+        .light-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-on {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        .status-off {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            min-width: 80px;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-on {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-on:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-off {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+        
+        .btn-off:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        
+        .brightness-control {
+            margin-top: 15px;
+        }
+        
+        .brightness-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .brightness-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            transition: all 0.3s ease;
+        }
+        
+        .brightness-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .brightness-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            margin-right: 12px;
+            border-radius: 2px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .form-control {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        
+        .schedule-info {
+            background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border-left: 4px solid #FF9800;
+        }
+        
+        .schedule-time {
+            font-weight: 600;
+            color: #E65100;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .form-control {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💡 ระบบควบคุมไฟอัจฉริยะ</h1>
+
+    <div class="dashboard" id="lights-container"></div>
+
+    <div class="dashboard">
+        <div class="card">
+            <h3 class="section-title">🌀 ควบคุมกลุ่มไฟ</h3>
+            <div class="controls">
+                <button class="btn btn-on" onclick="groupControl('บ้าน', true)">เปิดไฟในบ้าน</button>
+                <button class="btn btn-off" onclick="groupControl('บ้าน', false)">ปิดไฟในบ้าน</button>
+            </div>
+            <div class="controls">
+                <button class="btn btn-on" onclick="groupControl('ทั้งหมด', true)">เปิดไฟทั้งหมด</button>
+                <button class="btn btn-off" onclick="groupControl('ทั้งหมด', false)">ปิดไฟทั้งหมด</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">🚶 ตรวจจับการเคลื่อนไหว</h3>
+            <div class="input-group">
+                <select id="motionSelect" class="form-control">
+                    <option value="0">ไฟห้องนอน</option>
+                    <option value="1">ไฟห้องนั่งเล่น</option>
+                    <option value="2">ไฟหน้าบ้าน</option>
+                </select>
+                <button class="btn btn-primary" onclick="simulateMotion()">จำลองการเคลื่อนไหว</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">🗣️ สั่งงานด้วยเสียง</h3>
+            <div class="input-group">
+                <input id="voiceCommand" class="form-control" placeholder="เช่น เปิดไฟหน้าบ้าน" />
+                <button class="btn btn-primary" onclick="voiceControl()">ส่งคำสั่ง</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">⏰ ตั้งเวลาเปิด/ปิด</h3>
+            <button class="btn btn-primary" onclick="checkSchedule()">ตรวจสอบเวลา</button>
+            <div class="schedule-info">
+                <div class="schedule-time">🕕 เปิดเวลา: 18:00 | 🌙 ปิดเวลา: 23:00</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="notification" class="notification"></div>
+
+<script>
+    const lights = [
+        { name: "ไฟห้องนอน", isOn: false, brightness: 100, icon: "🛏️" },
+        { name: "ไฟห้องนั่งเล่น", isOn: false, brightness: 100, icon: "🛋️" },
+        { name: "ไฟหน้าบ้าน", isOn: false, brightness: 100, icon: "🏠" }
+    ];
+
+    function showNotification(message) {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.classList.add('show');
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 3000);
+    }
+
+    function renderLights() {
+        const container = document.getElementById('lights-container');
+        
+        // สร้าง cards ครั้งแรกเท่านั้น
+        if (container.children.length === 0) {
+            lights.forEach((light, index) => {
+                container.innerHTML += `
+                    <div class="card light-card" id="light-card-${index}">
+                        <div class="light-header">
+                            <div class="light-icon">${light.icon}</div>
+                            <div class="light-name">${light.name}</div>
+                        </div>
+                        
+                        <div class="status-badge" id="status-badge-${index}">
+                            ❌ ปิด | ความสว่าง: ${light.brightness}%
+                        </div>
+                        
+                        <div class="controls">
+                            <button class="btn btn-on" onclick="turnOn(${index})">เปิด</button>
+                            <button class="btn btn-off" onclick="turnOff(${index})">ปิด</button>
+                        </div>
+                        
+                        <div class="brightness-control">
+                            <label class="brightness-label">ปรับความสว่าง</label>
+                            <input type="range" class="brightness-slider" id="brightness-${index}" 
+                                   min="0" max="100" value="${light.brightness}" 
+                                   onchange="setBrightness(${index}, this.value)">
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // อัพเดทเฉพาะสถานะที่เปลี่ยนแปลง
+        lights.forEach((light, index) => {
+            updateLightStatus(index);
+        });
+    }
+
+    function updateLightStatus(index) {
+        const light = lights[index];
+        const card = document.getElementById(`light-card-${index}`);
+        const statusBadge = document.getElementById(`status-badge-${index}`);
+        const brightnessSlider = document.getElementById(`brightness-${index}`);
+        
+        // อัพเดทคลาส active
+        if (light.isOn) {
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+        }
+        
+        // อัพเดทสถานะ badge
+        const statusClass = light.isOn ? 'status-on' : 'status-off';
+        const statusText = light.isOn ? '✅ เปิด' : '❌ ปิด';
+        
+        statusBadge.className = `status-badge ${statusClass}`;
+        statusBadge.textContent = `${statusText} | ความสว่าง: ${light.brightness}%`;
+        
+        // อัพเดท brightness slider
+        if (brightnessSlider.value != light.brightness) {
+            brightnessSlider.value = light.brightness;
+        }
+    }
+
+    function turnOn(index) {
+        lights[index].isOn = true;
+        showNotification(`เปิด${lights[index].name}แล้ว`);
+        updateLightStatus(index);
+    }
+
+    function turnOff(index) {
+        lights[index].isOn = false;
+        showNotification(`ปิด${lights[index].name}แล้ว`);
+        updateLightStatus(index);
+    }
+
+    function setBrightness(index, level) {
+        lights[index].brightness = parseInt(level);
+        showNotification(`ปรับความสว่าง${lights[index].name}เป็น ${level}%`);
+        updateLightStatus(index);
+    }
+
+    function groupControl(group, state) {
+        let indices = group === 'บ้าน' ? [0, 1] : [0, 1, 2];
+        indices.forEach(i => {
+            lights[i].isOn = state;
+            updateLightStatus(i);
+        });
+        const action = state ? 'เปิด' : 'ปิด';
+        showNotification(`${action}ไฟ${group}แล้ว`);
+    }
+
+    function simulateMotion() {
+        const index = parseInt(document.getElementById("motionSelect").value);
+        showNotification(`🚶‍♀️ ตรวจจับการเคลื่อนไหว: เปิด ${lights[index].name}`);
+        lights[index].isOn = true;
+        updateLightStatus(index);
+    }
+
+    function voiceControl() {
+        const command = document.getElementById("voiceCommand").value.toLowerCase();
+        let commandExecuted = false;
+        let changedLights = [];
+        
+        lights.forEach((light, index) => {
+            const lightName = light.name.toLowerCase();
+            if (command.includes("เปิด") && command.includes(lightName)) {
+                lights[index].isOn = true;
+                changedLights.push(index);
+                commandExecuted = true;
+            } else if (command.includes("ปิด") && command.includes(lightName)) {
+                lights[index].isOn = false;
+                changedLights.push(index);
+                commandExecuted = true;
+            }
+        });
+        
+        if (commandExecuted) {
+            showNotification(`ดำเนินการคำสั่ง: "${command}" แล้ว`);
+            document.getElementById("voiceCommand").value = '';
+            // อัพเดทเฉพาะไฟที่เปลี่ยนแปลง
+            changedLights.forEach(index => updateLightStatus(index));
+        } else {
+            showNotification("ไม่เข้าใจคำสั่ง กรุณาลองใหม่");
+        }
+    }
+
+    function checkSchedule() {
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+        
+        if (currentTime === "18:00") {
+            lights[0].isOn = true;
+            showNotification("🕕 ถึงเวลา 18:00 - เปิดไฟห้องนอน");
+            updateLightStatus(0);
+        } else if (currentTime === "23:00") {
+            lights[0].isOn = false;
+            showNotification("🌙 ถึงเวลา 23:00 - ปิดไฟห้องนอน");
+            updateLightStatus(0);
+        } else {
+            showNotification(`⌚ ตอนนี้เวลา: ${currentTime} (ไม่มีการเปลี่ยนแปลง)`);
+        }
+    }
+
+    // Handle Enter key for voice command
+    document.getElementById('voiceCommand').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            voiceControl();
+        }
+    });
+
+    // Initialize the app
+    renderLights();
+</script>
+
+</body>
+</html>
